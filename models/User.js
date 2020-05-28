@@ -1,6 +1,6 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
-//chang2
+//chang2c
 const UserSchema = new Schema({
     first_name: {
         type: String

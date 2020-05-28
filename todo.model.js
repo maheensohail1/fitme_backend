@@ -11,10 +11,14 @@ let Todo = new Schema({
     todo_priority: {
         type: String
     },
+    images: {
+        type: Array,
+        default: []
+    },
     todo_completed: {
         type: Boolean
     }
-
+    
 });
 
 module.exports = mongoose.model('Todo', Todo);

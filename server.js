@@ -5,10 +5,30 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const todoRoutes = express.Router();
 const PORT = 4000;
-
-
+const multer= require('multer');
+const dproutes= express.Router();
 
 let Todo = require('./todo.model');
+let DP= require('./dp.model')
+
+var storage = multer.diskStorage({
+    destination: (req,file,cb) =>{
+        cb(null, 'uploads/')
+    },
+    filename:(req,file,cb) =>{
+        cb(null, `${Date.now()}_${file.originalname}`)
+    },
+    fileFilter: (req,file,cb) =>{
+        const ext = path.extname(file.originalname)
+        if(ext !== '.jpg' || ext!=='.png'){
+            return cb(res.status(400).end('only jpg, png are allowed'), false);
+        }
+        cb(null, true)
+    }
+})
+var upload = multer({ storage: storage}).single("file")
+
+
 
 
 app.use(cors());
@@ -40,6 +60,14 @@ todoRoutes.route('/').get(function(req, res){
 
 });
 
+todoRoutes.route('/addImage').post(function(req, res){
+     
+    upload(req,res,err => {
+        if(err) return res.json({ success: false, err})
+        return res.json({ success: true, image:res.req.file.path, fileName: res.req.file.filename})
+    })
+});
+
 todoRoutes.route('/:id').get(function(req, res){
     let id = req.params.id;
     Todo.findById(id, function(err, todo){
@@ -64,6 +92,17 @@ todoRoutes.route('/delete/:id').delete(function(req, res){
     
 });
 
+todoRoutes.route('/').post(function(req, res){
+    let todo = new Todo(req.body);
+    todo.save()
+    .then(todo => {
+        res.status(200).json({'todo': 'todo added succesfully'});
+    })
+    .catch(err => {
+        res.status(400).send('adding new todo failed');
+    });
+});
+
 todoRoutes.route('/add').post(function(req, res){
     let todo = new Todo(req.body);
     todo.save()
@@ -73,6 +112,18 @@ todoRoutes.route('/add').post(function(req, res){
     .catch(err => {
         res.status(400).send('adding new todo failed');
     });
+});
+
+todoRoutes.route('/getTodos').post(function(req, res){
+    
+    Todo.find(function(err, todos){
+        if(err){
+        return res.status(400).json({ success:false, err})
+    
+    }  else {
+        res.status(200).json({ success: true, todos});
+    }});
+
 });
 
 todoRoutes.route('/update/:id').post(function(req,res){
@@ -94,10 +145,37 @@ todoRoutes.route('/update/:id').post(function(req,res){
     });
 });
 
+dproutes.route('/add').post(function(req, res){
+    let dp = new DP(req.body);
+    dp.save()
+    .then(dp => {
+        res.status(200).json({'dp': 'dietplan added succesfully'});
+    })
+    .catch(err => {
+        res.status(400).send('adding new dietplan failed');
+    });
+});
+
+dproutes.route('/getDPs').post(function(req, res){
+    
+    DP.find(function(err, dps){
+        if(err){
+        return res.status(400).json({ success:false, err})
+    
+    }  else {
+        res.status(200).json({ success: true, dps});
+    }});
+
+});
+
 app.use('/todos', todoRoutes);
 
 var Users = require('./routes/Users')
 app.use('/users', Users)
+app.use('/uploads', express.static('uploads'));
+
+
+app.use('/DP', dproutes);
 
 app.listen(PORT, function(){
     console.log("server is running on port: "+ PORT);
